@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrueSize Workshop</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="dot"></span> TrueSize Workshop <span id="project-name" class="muted"></span></div>
+    <div class="top-actions">
+      <select id="space" title="Workspace"></select>
+      <select id="theme" title="Look">
+        <option value="bench">Dark bench</option>
+        <option value="studio">Light studio</option>
+        <option value="blush">Blush &amp; gold</option>
+      </select>
+      <select id="voice" title="Assistant's voice">
+        <option value="bf_emma">British (woman)</option>
+        <option value="bm_george">British (man)</option>
+        <option value="ff_siwis">French (woman)</option>
+        <option value="if_sara">Italian (woman)</option>
+        <option value="im_nicola">Italian (man)</option>
+        <option value="ef_dora">Spanish (woman)</option>
+        <option value="em_alex">Spanish (man)</option>
+        <option value="hf_alpha">Indian (woman)</option>
+        <option value="hm_omega">Indian (man)</option>
+        <option value="pf_dora">Brazilian (woman)</option>
+        <option value="jf_alpha">Japanese (woman)</option>
+        <option value="af_heart">American (woman)</option>
+        <option value="device">This device's voice</option>
+        <option value="off">Voice off</option>
+      </select>
+      <select id="units" title="Units"><option value="imperial">ft / in</option><option value="metric">metres</option></select>
+      <button id="btn-new">New</button>
+      <button id="btn-open">Open</button>
+      <button id="btn-save" class="primary">Save</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel left">
+      <h3>Build log</h3>
+      <ol id="log"></ol>
+      <h3>Selected</h3>
+      <div id="selected" class="muted">Click a piece to see its size. Pull apart, then click a single balloon to change it.</div>
+    </aside>
+
+    <section class="bench-wrap">
+      <div id="bench"></div>
+      <div class="view-actions">
+        <button id="btn-eye" title="See it like a guest, 5′4″ eye height">👁 Eye level</button>
+        <button id="btn-frame" title="Show everything">⤢ Fit view</button>
+        <button id="btn-render" class="primary" title="Photo-real picture of this view (artist's impression)">✨ Render it</button>
+      </div>
+      <div class="toolbar">
+        <div class="group" aria-label="Add">
+          <span class="group-name">Add</span>
+          <button data-tool="room" title="Room by size">Room</button>
+          <button data-tool="balloonArch" title="Balloon arch">Arch</button>
+          <button data-tool="roundTable">Round table</button>
+          <button data-tool="banquetTable">Banquet table</button>
+          <button data-tool="chair">Chair</button>
+          <button data-tool="backdrop">Backdrop</button>
+        </div>
+        <div class="group" aria-label="Tools">
+          <span class="group-name">Tools</span>
+          <button id="btn-undo" title="Undo the last change">↶ Undo</button>
+          <button id="btn-measure" title="Click two points">📏 Measure</button>
+          <button id="btn-explode" title="See how each piece is made">Pull apart</button>
+          <span id="explode-wrap" class="slider" hidden><label title="How far apart">Spread <input id="explode-amt" type="range" min="0.2" max="2" step="0.05" value="1" /></label><label title="Show size, colour and finish on every balloon"><input id="balloon-tags" type="checkbox" checked /> Balloon tags</label></span>
+          <button id="btn-labels">Labels</button>
+          <button id="btn-import" title="Bring in a room scan">📐 Import scan</button>
+          <button id="btn-snap">Snapshot</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel right">
+      <div class="orb-wrap"><div id="orb" class="orb"></div><div id="assistant-status" class="muted">Ready</div></div>
+      <div id="chat" class="chat"></div>
+      <form id="ask" class="ask">
+        <textarea id="ask-text" rows="3" placeholder="Tell me what to build or change… e.g. “a 9 ft blush and gold arch by the back wall”"></textarea>
+        <div class="ask-row"><button type="button" id="btn-mic" title="Hold to talk">🎙 Hold to talk</button><button type="submit" class="primary">Build</button></div>
+      </form>
+      <h3>Shopping list</h3>
+      <div id="shopping" class="muted">Add an arch or tables to see counts.</div>
+    </aside>
+  </main>
+
+  <dialog id="render-dialog"><form method="dialog">
+    <h3>Render</h3>
+    <div class="render-pair"><figure><img id="render-before" alt="3D view" /><figcaption>3D view (exact sizes)</figcaption></figure>
+    <figure><img id="render-after" alt="Render" /><figcaption>Render (artist's impression)</figcaption></figure></div>
+    <p class="muted" id="render-prompt"></p>
+    <div class="ask-row"><button type="button" id="render-save">Save picture</button><button>Close</button></div>
+  </form></dialog>
+  <dialog id="import-dialog"><form method="dialog">
+    <h3>Import a room</h3>
+    <p class="muted">Rooms scanned with the <b>TrueSize Scan</b> app on an iPhone or iPad Pro (exact walls, doors, windows and furniture):</p>
+    <ul id="scan-list"></ul>
+    <p class="muted">Or a 3D file from another scanning app (.glb, .gltf, .obj):</p>
+    <label class="file-btn">Choose a file…<input id="scan" type="file" accept=".glb,.gltf,.obj" hidden /></label>
+    <div class="ask-row"><span></span><button>Close</button></div>
+  </form></dialog>
+  <dialog id="open-dialog"><form method="dialog"><h3>Open a project</h3><ul id="project-list"></ul><button>Close</button></form></dialog>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
