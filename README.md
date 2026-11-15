@@ -15,7 +15,7 @@ It runs on computers you already own. No account, no subscription, nothing leave
 | | |
 |---|---|
 | **Talk or type** | A local language model turns your words into building steps. Software, not the AI, does every size and count, so "two tables" means two and "9 ft" means 9 ft. |
-| **True-size 3D** | Rooms, balloon arches (classic or organic), round and banquet tables, chairs, backdrops, plus basic shapes. |
+| **True-size 3D** | Rooms, balloon arches (classic or organic), balloon garlands and columns, round and banquet tables, chairs, backdrops, drapery, dance floors, centrepieces and tiered cakes (placed on tables automatically), uplights, plus basic shapes. |
 | **Shopping list** | Balloon counts by size, colour and finish, table seats, chairs. |
 | **📏 Measure** | Click two points: distance, rise and angle. |
 | **Pull apart** | Walls fold down, pieces lift and separate into labelled components. Click any single balloon to see and change its size, colour and finish, alone or every balloon like it. |
