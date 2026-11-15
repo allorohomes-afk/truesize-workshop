@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Workshop Guide</title>
+<style>
+  :root { --bg: #fbf4f2; --panel: #fffaf8; --line: #ecd8d3; --text: #3a2a2c; --muted: #8c6f73; --accent: #b8860b; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1b1415; --panel: #241b1c; --line: #3d2e30; --text: #f3e6e3; --muted: #b9a0a3; --accent: #e0b54a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; } h1 small { color: var(--muted); font-weight: 400; font-size: 15px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); margin: 0 0 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-top: 16px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; break-inside: avoid; }
+  section p, section ul { margin: 0; } ul { padding-left: 18px; } li { margin: 2px 0; }
+  .say { font-style: italic; color: var(--muted); }
+  kbd, b.btn { display: inline-block; border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; font: inherit; font-weight: 600; background: var(--bg); }
+  .wide { grid-column: 1 / -1; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 16px; }
+  @media print { body { background: #fff; font-size: 11.5px; } main { padding: 0; } .grid { gap: 8px; grid-template-columns: 1fr 1fr; } section { padding: 8px 10px; } h1 { font-size: 20px; } .noprint { display: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>The Workshop <small>· how to use it in 5 minutes</small></h1>
+  <p class="noprint" style="color:var(--muted)">Print this page (⌘P) for a one-page cheat sheet.</p>
+  <div class="grid">
+    <section>
+      <h2>1 · Open it</h2>
+      <ul>
+        <li>Open <b id="addr">the Workshop address</b> on your iPad, phone or laptop.</li>
+        <li>Pick <b>your workspace</b> at the top. Your projects, palettes and look are kept there and follow you between devices.</li>
+        <li>Tap <b class="btn">? Guide</b> any time to see this page.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>2 · Start an event</h2>
+      <ul>
+        <li><b class="btn">New</b> → pick a template: baby shower, birthday, bridal shower, wedding, graduation or gala. It's built at real sizes in your palette.</li>
+        <li>Or start blank and add pieces from the <b>Add</b> and <b>Decor</b> rows.</li>
+        <li>Reuse a layout: <b class="btn">New</b> → <i>Save what's on screen as a template</i>.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>3 · Just say it</h2>
+      <p>Type in the box, or <b>hold <span class="btn">🎙 Hold to talk</span></b>, speak, and let go. <span class="aname">The assistant</span> builds it and answers out loud.</p>
+      <ul class="say">
+        <li>"a 30 by 40 foot ballroom with 12 foot ceilings"</li>
+        <li>"a 9 foot organic arch by the back wall"</li>
+        <li>"two 60 inch round tables with flower centrepieces"</li>
+        <li>"make the arch 7 feet" · "remove the chairs"</li>
+      </ul>
+    </section>
+    <section>
+      <h2>4 · Your colours</h2>
+      <ul>
+        <li>Pick a palette at the top of the right panel. New pieces use it, and so does <span class="aname">the assistant</span> when you don't name colours.</li>
+        <li><b class="btn">Edit</b> makes your own palette (up to 5 colours) and saves it in your workspace.</li>
+        <li>The look (Dark, Light, Blush &amp; gold), units and voice are at the top.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>5 · Measure and check</h2>
+      <ul>
+        <li><b class="btn">📏 Measure</b>, then tap two points: distance, rise and angle.</li>
+        <li>Tap any piece to see its exact size on the left.</li>
+        <li><b class="btn">👁 Eye level</b> shows what a guest sees; <b class="btn">Fit view</b> shows everything.</li>
+        <li>The <b>Shopping list</b> counts every balloon by size, colour and finish, plus tables, chairs and decor.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>6 · Pull apart, change one balloon</h2>
+      <ul>
+        <li><b class="btn">Pull apart</b>: the walls fold down and every piece separates, with labels.</li>
+        <li>Zoom in to read each balloon's size, colour and finish.</li>
+        <li><b>Tap one balloon</b> to change its size, colour or finish, or every balloon like it.</li>
+        <li><b class="btn">Put together</b> puts it back.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>7 · Show the client</h2>
+      <ul>
+        <li><b class="btn">✨ Render it</b> turns the view into a photo-style picture in about a minute. Use <b>Eye level</b> first.</li>
+        <li>The render is an artist's impression; the 3D view and measurements are the real plan.</li>
+        <li><b class="btn">Snapshot</b> saves the 3D view as a picture.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>8 · Real rooms</h2>
+      <ul>
+        <li>On an iPad Pro or iPhone Pro, open <b>the scan app</b>, name the room, walk around it slowly, then <i>Send to Workshop</i>.</li>
+        <li>Here: <b class="btn">📐 Import scan</b> → pick the room. Walls, doors and windows come in at their real size.</li>
+        <li>Scan the venues you use often once, and reuse them.</li>
+      </ul>
+    </section>
+    <section class="wide">
+      <h2>Good to know</h2>
+      <ul>
+        <li><b>Save</b> often; <b>Open</b> lists your projects. <b>Undo</b> is in the Tools row.</li>
+        <li>Sizes are always calculated by the Workshop, not guessed by the AI, so "9 ft" is 9 ft and "two tables" is two.</li>
+        <li>Everything runs on the family's own computers. Nothing is sent to the internet, and there's no account or subscription.</li>
+      </ul>
+    </section>
+  </div>
+  <footer>Workshop guide · made for you; ask for anything that would make it easier.</footer>
+</main>
+<script>
+  // fill in this Workshop's address and the assistant's name
+  document.getElementById('addr').textContent = location.origin.replace(/^https?:\/\//, '')
+  fetch('/api/config').then(r => r.json()).then(c => { if (c.assistant) document.querySelectorAll('.aname').forEach(e => { e.textContent = c.assistant }) }).catch(() => {})
+</script>
+</body>
+</html>

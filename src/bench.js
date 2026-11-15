@@ -82,6 +82,7 @@ export class Bench {
     g.traverse(o => { o.userData.partId = spec.id })
     this._place(g, spec)
     const label = this._label(spec.label || spec.id)
+    if (['chair', 'centerpiece', 'uplight'].includes(spec.kind)) label.element.classList.add('minor')   // many of these: no tag each, tap for details
     label.position.set(0, built.size.h + 0.15, 0)
     g.add(label)
     this.scene.add(g)

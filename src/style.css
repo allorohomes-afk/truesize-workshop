@@ -87,6 +87,17 @@ dialog li:hover { color: var(--accent); }
 }
 
 #render-dialog { max-width: min(1200px, 95vw); }
+.palette-row { display: flex; align-items: center; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.palette-row select { flex: 1; min-width: 0; }
+#palette-swatches { display: flex; gap: 3px; }
+.swatch-dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line); }
+#pal-colors label { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 6px; margin: 4px 0; }
+.template-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.template-list li { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.template-list li:hover { border-color: var(--accent); }
+.template-list li b { display: block; }
+#new-dialog { max-width: min(640px, 95vw); }
+a.file-btn { color: var(--text); text-decoration: none; }
 .render-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .render-pair img { width: 100%; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
 figure { margin: 0; } figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
@@ -101,3 +112,4 @@ figure { margin: 0; } figcaption { font-size: 12px; color: var(--muted); margin-
 .balloon-card select { width: 100%; }
 .balloon-card .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--line); vertical-align: -1px; margin-right: 4px; }
 .balloon-card .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.part-label.minor { display: none; }

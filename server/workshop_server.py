@@ -96,11 +96,13 @@ Example answer:
  {{"op":"add","id":"banquet-2","kind":"banquetTable","label":"Banquet table","params":{{"length":"6ft"}},"position":["4ft",0,"-6ft"]}}]}}"""
 
 
-def chat_ops(text, scene, units):
+def chat_ops(text, scene, units, palette=None):
     scene_txt = json.dumps(scene)[:6000]
     body = {"model": MODEL, "stream": False, "format": "json", "options": {"temperature": 0.1, "num_ctx": 8192},
             "messages": [{"role": "system", "content": SYSTEM},
-                         {"role": "user", "content": f"Units the user prefers: {units}\nCurrent scene: {scene_txt}\n\nRequest: {text}"}]}
+                         {"role": "user", "content": f"Units the user prefers: {units}\n"
+                                                                + (f"Her colour palette (use these when the request names no colours): {', '.join(palette)}\n" if palette else "")
+                                                                + f"Current scene: {scene_txt}\n\nRequest: {text}"}]}
     req = urllib.request.Request(f"{OLLAMA}/api/chat", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=600) as r:
         content = json.loads(r.read())["message"]["content"]
@@ -243,6 +245,8 @@ class Handler(SimpleHTTPRequestHandler):
         if space not in SPACES:
             return None
         d = DATA / space
+        if q.get("folder") == "templates":   # her own templates live beside her projects
+            d = d / "templates"
         d.mkdir(parents=True, exist_ok=True)
         return d
 
@@ -273,6 +277,12 @@ class Handler(SimpleHTTPRequestHandler):
             if not d or not name or not (d / "scans" / f"{name}.json").exists():
                 return self._json(404, {"error": "not found"})
             return self._json(200, json.loads((d / "scans" / f"{name}.json").read_text()))
+        if p == "/api/settings":   # per-workspace look, palettes, units, voice: follows the person between devices
+            d = self._space()
+            if not d:
+                return self._json(400, {"error": "unknown workspace"})
+            f = d / "settings.json"
+            return self._json(200, json.loads(f.read_text()) if f.exists() else {})
         if p == "/api/config":
             return self._json(200, {"spaces": [{"id": i.strip(), "label": l.strip()} for i, l in SPACE_LIST], "renderUrl": RENDER_URL, "assistant": ASSISTANT})
         if p == "/api/health":
@@ -281,6 +291,14 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_PUT(self):
         p = self.path.split("?")[0]
+        if p == "/api/settings":
+            d = self._space()
+            if not d:
+                return self._json(400, {"error": "unknown workspace"})
+            data = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length", 0) or 0), 200_000)) or b"{}")
+            keep = {k: data[k] for k in ("theme", "units", "voice", "palettes", "palette") if k in data}
+            (d / "settings.json").write_text(json.dumps(keep, indent=1))
+            return self._json(200, {"saved": True})
         if not p.startswith("/api/projects/"):
             return self._json(404, {"error": "no such route"})
         d, name = self._space(), self._name()
@@ -346,7 +364,8 @@ class Handler(SimpleHTTPRequestHandler):
         if not text:
             return self._json(400, {"error": "empty request"})
         try:
-            return self._json(200, chat_ops(text, req.get("scene", []), req.get("units", "imperial")))
+            return self._json(200, chat_ops(text, req.get("scene", []), req.get("units", "imperial"),
+                                                [str(c)[:30] for c in (req.get("palette") or [])][:6]))
         except Exception as e:  # model offline, timeout, ...
             return self._json(502, {"reply": f"I couldn't reach my model ({type(e).__name__}). Try again in a moment.", "ops": []})
 

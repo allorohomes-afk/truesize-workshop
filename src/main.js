@@ -6,6 +6,7 @@ import { FINISHES, BALLOON_SIZES } from './parts.js'
 import { holdToTalk } from './voice.js'
 import { renderIt, setRenderUrl } from './render.js'
 import { scanToOps } from './scan.js'
+import { PALETTES, TEMPLATES, buildTemplate, withPalette } from './templates.js'
 
 const $ = s => document.querySelector(s)
 function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]) }
@@ -18,13 +19,13 @@ const history = []
 let counter = 0
 
 // ---------- preferences ----------
-function setTheme(t) { document.documentElement.dataset.theme = t; store.set('ws.theme', t); bench.applyTheme() }
+function setTheme(t) { document.documentElement.dataset.theme = t; $('#theme').value = t; store.set('ws.theme', t); bench.applyTheme() }
 $('#theme').value = store.get('ws.theme', 'bench'); setTheme($('#theme').value)
-$('#theme').onchange = e => setTheme(e.target.value)
+$('#theme').onchange = e => { setTheme(e.target.value); saveSettings() }
 $('#voice').value = store.get('ws.voice-name', 'bf_emma')
-$('#voice').onchange = e => { store.set('ws.voice-name', e.target.value); say('Hello, this is my new voice.') }
+$('#voice').onchange = e => { store.set('ws.voice-name', e.target.value); saveSettings(); say('Hello, this is my new voice.') }
 $('#units').value = store.get('ws.units', 'imperial'); bench.units = $('#units').value
-$('#units').onchange = e => { bench.units = e.target.value; store.set('ws.units', bench.units); refreshInfo() }
+$('#units').onchange = e => { bench.units = e.target.value; store.set('ws.units', bench.units); saveSettings(); refreshInfo() }
 // Workspaces and the render address come from the server (WORKSHOP_SPACES, RENDER_URL).
 let assistant = 'Ada'
 async function loadConfig() {
@@ -36,8 +37,55 @@ async function loadConfig() {
   setRenderUrl(cfg.renderUrl)
   assistant = cfg.assistant || 'Ada'
 }
-$('#space').onchange = e => store.set('ws.space', e.target.value)
+$('#space').onchange = e => { store.set('ws.space', e.target.value); loadSettings() }
 const space = () => $('#space').value
+
+// ---------- per-workspace settings: look, units, voice, palettes (saved on the server, so they follow the person) ----------
+let settings = {}
+async function loadSettings() {
+  try { settings = await (await fetch(`/api/settings?space=${space()}`)).json() } catch { settings = {} }
+  if (settings.theme) setTheme(settings.theme)
+  if (settings.units) { $('#units').value = bench.units = settings.units; refreshInfo() }
+  if (settings.voice) $('#voice').value = settings.voice
+  fillPalettes()
+}
+let saveTimer
+function saveSettings() {
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => fetch(`/api/settings?space=${space()}`, { method: 'PUT', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ...settings, theme: $('#theme').value, units: bench.units, voice: $('#voice').value, palette: $('#palette').value }) }).catch(() => {}), 500)
+}
+const allPalettes = () => ({ ...(settings.palettes || {}), ...PALETTES })
+const palette = () => allPalettes()[$('#palette').value] || PALETTES['Blush & gold']
+function fillPalettes() {
+  const mine = Object.keys(settings.palettes || {}), all = allPalettes()
+  $('#palette').innerHTML = (mine.length ? `<optgroup label="Mine">${mine.map(n => `<option>${esc(n)}</option>`).join('')}</optgroup>` : '')
+    + `<optgroup label="Starters">${Object.keys(PALETTES).map(n => `<option>${esc(n)}</option>`).join('')}</optgroup>`
+  $('#palette').value = all[settings.palette] ? settings.palette : 'Blush & gold'
+  showSwatches()
+}
+function showSwatches() { $('#palette-swatches').innerHTML = palette().map(c => `<span class="swatch-dot" title="${esc(c)}" style="background:${esc(color(c))}"></span>`).join('') }
+$('#palette').onchange = () => { settings.palette = $('#palette').value; showSwatches(); saveSettings() }
+$('#btn-palette').onclick = () => {
+  const name = $('#palette').value, mine = !!(settings.palettes || {})[name]
+  $('#pal-name').value = mine ? name : `My ${name}`
+  const cur = palette()
+  $('#pal-colors').innerHTML = [0, 1, 2, 3, 4].map(i => `<label><span class="swatch-dot" id="pal-dot-${i}"></span><select id="pal-c${i}">${i > 2 ? '<option value="">(none)</option>' : ''}${BALLOON_COLORS.map(c => `<option${c === cur[i] ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>`).join('')
+  const dots = () => [0, 1, 2, 3, 4].forEach(i => { const v = $(`#pal-c${i}`).value; $(`#pal-dot-${i}`).style.background = v ? color(v) : 'transparent' })
+  ;[0, 1, 2, 3, 4].forEach(i => { if (i > 2 && !cur[i]) $(`#pal-c${i}`).value = ''; $(`#pal-c${i}`).onchange = dots }); dots()
+  $('#pal-delete').hidden = !mine
+  $('#palette-dialog').showModal()
+}
+$('#pal-save').onclick = () => {
+  const name = $('#pal-name').value.trim().slice(0, 40) || 'My palette'
+  const cols = [0, 1, 2, 3, 4].map(i => $(`#pal-c${i}`).value).filter(Boolean)
+  settings.palettes = { ...(settings.palettes || {}), [name]: cols }; settings.palette = name
+  fillPalettes(); saveSettings(); $('#palette-dialog').close(); log(`Palette “${name}” saved`)
+}
+$('#pal-delete').onclick = () => {
+  const name = $('#palette').value; const p = { ...(settings.palettes || {}) }; delete p[name]
+  settings.palettes = p; settings.palette = 'Blush & gold'; fillPalettes(); saveSettings(); $('#palette-dialog').close()
+}
 
 // ---------- log + chat ----------
 function log(text, cls = '') { const li = document.createElement('li'); li.textContent = text; if (cls) li.className = cls; $('#log').appendChild(li); li.scrollIntoView({ block: 'nearest' }) }
@@ -137,7 +185,7 @@ $('#ask').onsubmit = async e => {
   $('#ask-text').value = ''; bubble(text, 'you'); busy(true, `${assistant} is planning…`)
   try {
     const scene = bench.toJSON().parts.map(s => ({ id: s.id, kind: s.kind, label: s.label, params: s.params, position: s.position }))
-    const r = await fetch('/api/command', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, scene, units: bench.units }) })
+    const r = await fetch('/api/command', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, scene, units: bench.units, palette: palette() }) })
     const d = await r.json()
     busy(true)
     if (d.ops?.length) await applyOps(d.ops)
@@ -170,7 +218,7 @@ const QUICK = {
 document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => {
   const kind = b.dataset.tool; const q = QUICK[kind]
   const offset = kind === 'room' ? [0, 0, 0] : [`${(counter % 4) * 3 - 4}ft`, 0, `${Math.floor(counter / 4) * 4}ft`]
-  applyOps([{ op: 'add', id: `${kind}-${++counter}`, kind, label: q.label, params: q.params, position: offset }])
+  applyOps([{ op: 'add', id: `${kind}-${++counter}`, kind, label: q.label, params: withPalette(kind, q.params, palette()), position: offset }])
 })
 $('#btn-measure').onclick = e => { bench.measuring = !bench.measuring; e.target.classList.toggle('on', bench.measuring); if (bench.measuring) say('Click two points and I will measure between them.'); else bench.clearMeasures() }
 function syncExplode() {
@@ -301,7 +349,39 @@ function showBalloon(p, b) {
 
 // ---------- projects (saved per workspace on the server) ----------
 function setProject(name) { project = name; $('#project-name').textContent = `· ${name}` }
-$('#btn-new').onclick = () => { snapshotForUndo(); bench.clear(); setProject('Untitled'); log('New project'); refreshInfo() }
+function startFrom(data, name) {
+  snapshotForUndo(); bench.assemble(); bench.load(data); setProject(name); refreshInfo(); syncExplode()
+}
+$('#btn-new').onclick = async () => {
+  const pal = palette()
+  const list = $('#template-list')
+  list.innerHTML = '<li data-key="blank"><b>Blank</b><span class="muted">An empty bench</span></li>'
+    + Object.entries(TEMPLATES).map(([k, t]) => `<li data-key="${k}"><b>${esc(t.name)}</b><span class="muted">${esc(t.about)}</span></li>`).join('')
+  list.querySelectorAll('li').forEach(li => li.onclick = () => {
+    const k = li.dataset.key; $('#new-dialog').close()
+    if (k === 'blank') { startFrom({ units: bench.units, parts: [] }, 'Untitled'); log('New project'); return }
+    startFrom({ ...buildTemplate(k, pal), units: bench.units }, TEMPLATES[k].name)   // sizes are exact in any units
+    log(`Started from the ${TEMPLATES[k].name} template in ${$('#palette').value}`)
+    say(`Here's a ${TEMPLATES[k].name.toLowerCase()} layout in ${$('#palette').value}. Change anything you like.`)
+  })
+  const mine = $('#my-template-list'); mine.innerHTML = '<li class="muted">Loading…</li>'
+  $('#new-dialog').showModal()
+  try {
+    const d = await (await fetch(`/api/projects?space=${space()}&folder=templates`)).json()
+    mine.innerHTML = (d.projects || []).length ? '' : '<li class="muted">None yet. Build a layout you reuse, then “Save what\'s on screen as a template”.</li>'
+    for (const n of d.projects || []) {
+      const li = document.createElement('li'); li.innerHTML = `<b>${esc(n)}</b>`
+      li.onclick = async () => { $('#new-dialog').close(); startFrom(await (await fetch(`/api/projects/${encodeURIComponent(n)}?space=${space()}&folder=templates`)).json(), `${n} (copy)`); log(`Started from your template “${n}”`) }
+      mine.appendChild(li)
+    }
+  } catch { mine.innerHTML = '<li class="muted">Could not reach the workshop server.</li>' }
+}
+$('#save-template').onclick = async () => {
+  const name = (prompt('Name this template', project === 'Untitled' ? 'My layout' : project) || '').replace(/[^A-Za-z0-9 _.-]/g, '').slice(0, 80)
+  if (!name) return
+  const r = await fetch(`/api/projects/${encodeURIComponent(name)}?space=${space()}&folder=templates`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(bench.toJSON()) })
+  if (r.ok) { $('#new-dialog').close(); log(`Saved template “${name}”`); say(`Saved “${name}” as a template.`) } else log('Saving the template failed', 'err')
+}
 $('#btn-save').onclick = async () => {
   let name = project === 'Untitled' ? prompt('Name this project', 'My event') : project
   if (!name) return
@@ -322,4 +402,4 @@ $('#btn-open').onclick = async () => {
 }
 
 setProject('Untitled')
-loadConfig().then(() => { busy(false); say(`Hi, I’m ${assistant}. Tell me what to build, or start with a room and an arch from the bar below.`) })
+loadConfig().then(loadSettings).then(() => { busy(false); say(`Hi, I’m ${assistant}. Tell me what to build, or start with a room and an arch from the bar below.`) })

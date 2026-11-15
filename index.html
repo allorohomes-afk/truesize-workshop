@@ -36,6 +36,7 @@
       <button id="btn-new">New</button>
       <button id="btn-open">Open</button>
       <button id="btn-save" class="primary">Save</button>
+      <a id="btn-guide" class="file-btn" href="/guide.html" target="_blank" title="How to use the Workshop">? Guide</a>
     </div>
   </header>
 
@@ -88,6 +89,9 @@
     </section>
 
     <aside class="panel right">
+      <div class="palette-row" title="Colours for new pieces and for the assistant when you don't name colours">
+        <select id="palette"></select><span id="palette-swatches"></span><button id="btn-palette" title="Make or change a palette">Edit</button>
+      </div>
       <div class="orb-wrap"><div id="orb" class="orb"></div><div id="assistant-status" class="muted">Ready</div></div>
       <div id="chat" class="chat"></div>
       <form id="ask" class="ask">
@@ -113,6 +117,21 @@
     <p class="muted">Or a 3D file from another scanning app (.glb, .gltf, .obj):</p>
     <label class="file-btn">Choose a file…<input id="scan" type="file" accept=".glb,.gltf,.obj" hidden /></label>
     <div class="ask-row"><span></span><button>Close</button></div>
+  </form></dialog>
+  <dialog id="palette-dialog"><form method="dialog" class="balloon-card">
+    <h3>Palette</h3>
+    <label>Name <input id="pal-name" maxlength="40" /></label>
+    <div id="pal-colors"></div>
+    <p class="muted">The first colour leads; the lightest is used for linens, drapes and cakes.</p>
+    <div class="row"><button type="button" id="pal-save" class="primary">Save palette</button><button type="button" id="pal-delete">Delete</button><button>Close</button></div>
+  </form></dialog>
+  <dialog id="new-dialog"><form method="dialog">
+    <h3>Start something new</h3>
+    <p class="muted">Templates are starting layouts at real sizes, in your current palette. Change anything after.</p>
+    <ul id="template-list" class="template-list"></ul>
+    <h3>Your templates</h3>
+    <ul id="my-template-list" class="template-list"></ul>
+    <div class="ask-row"><button type="button" id="save-template">Save what's on screen as a template</button><button>Close</button></div>
   </form></dialog>
   <dialog id="open-dialog"><form method="dialog"><h3>Open a project</h3><ul id="project-list"></ul><button>Close</button></form></dialog>
   <script type="module" src="/src/main.js"></script>

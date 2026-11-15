@@ -22,7 +22,9 @@ It runs on computers you already own. No account, no subscription, nothing leave
 | **TrueSize Scan** (iPhone/iPad Pro) | A small free iOS app using Apple RoomPlan: scans a real room's walls, doors, windows and furniture and sends them to the Workshop at exact size. |
 | **✨ Render it** | Repaints the 3D view as a photograph with ComfyUI, locked to the scene's real depth so nothing moves. |
 | **Voice** | Hold-to-talk (Whisper) and spoken replies in 12 accents (Kokoro), on your own Mac. |
-| **Workspaces** | Separate project folders per person, plus shared. |
+| **Workspaces** | Separate project folders per person, plus shared. Each keeps its own look, units, voice and colour palettes on the server, so they follow the person between devices. |
+| **Templates and palettes** | Start from a baby shower, birthday, bridal shower, wedding reception, graduation or gala layout at real sizes, in any of 10 starter palettes or your own. Save your own layouts as templates. |
+| **Guide** | A one-page how-to in the app (`? Guide`), printable as a cheat sheet. |
 
 ## How it fits together
 
