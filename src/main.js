@@ -70,8 +70,11 @@ function snapshotForUndo() { history.push(JSON.stringify(bench.toJSON())); if (h
 
 // Software owns placement: plain numbers mean the user's units (the model often writes feet as bare numbers),
 // event pieces stand on the floor, and nothing is placed outside the room's walls.
-const FLOOR_KINDS = new Set(['room', 'balloonArch', 'roundTable', 'banquetTable', 'chair', 'backdrop'])
+const FLOOR_KINDS = new Set(['room', 'balloonArch', 'roundTable', 'banquetTable', 'chair', 'backdrop', 'balloonGarland', 'balloonColumn', 'drapery', 'danceFloor', 'uplight'])
+// these sit on a table: software finds the table and puts them on top, centred
+const ON_TABLE = new Set(['centerpiece', 'cake'])
 function placement(op) {
+  if (ON_TABLE.has(op.kind)) return onTable(op)
   if (!op.position) return op.position
   const unit = bench.units === 'imperial' ? 'ft' : 'm'
   let [x, y, z] = [0, 1, 2].map(i => { const v = op.position[i]; return typeof v === 'number' || /^-?\d+(\.\d+)?$/.test(String(v ?? '').trim()) ? toMeters(`${v ?? 0}${unit}`) : toMeters(v, 0) })
@@ -83,6 +86,18 @@ function placement(op) {
     z = Math.max(room.home.z - halfD, Math.min(room.home.z + halfD, z))
   }
   return [x, y, z]
+}
+
+function onTable(op) {
+  const tables = [...bench.parts.values()].filter(p => p.spec.kind.endsWith('Table'))
+  if (!tables.length) return op.position ? [0, 1, 2].map(i => toMeters(op.position[i], 0)) : undefined
+  const busy = new Set([...bench.parts.values()].filter(p => p.spec.kind === op.kind && p.spec.id !== op.id).map(p => p.group.position.x.toFixed(2) + p.group.position.z.toFixed(2)))
+  let pick
+  if (op.position) {   // the table nearest to where it was asked for
+    const [x, , z] = [0, 1, 2].map(i => toMeters(op.position[i], 0))
+    pick = tables.reduce((a, b) => (Math.hypot(b.home.x - x, b.home.z - z) < Math.hypot(a.home.x - x, a.home.z - z) ? b : a))
+  } else pick = tables.find(t => !busy.has(t.home.x.toFixed(2) + t.home.z.toFixed(2))) || tables[0]   // next table without one
+  return [pick.home.x, pick.size.h, pick.home.z]
 }
 
 async function applyOps(ops) {
@@ -144,6 +159,13 @@ const QUICK = {
   banquetTable: { label: 'Banquet table 6′', params: { length: '6ft' } },
   chair: { label: 'Chair', params: { color: 'white' } },
   backdrop: { label: 'Backdrop', params: { width: '8ft', height: '8ft', shape: 'arch', color: 'white' } },
+  balloonGarland: { label: 'Balloon garland', params: { width: '8ft', height: '8ft', shape: 'cascade', colors: ['blush', 'gold', 'ivory'] } },
+  balloonColumn: { label: 'Balloon column', params: { height: '6ft', colors: ['blush', 'gold'], topper: '24in' } },
+  centerpiece: { label: 'Centrepiece', params: { style: 'flowers', color: 'blush' } },
+  cake: { label: 'Cake', params: { tiers: 3, color: 'ivory' } },
+  drapery: { label: 'Drapery', params: { width: '10ft', height: '10ft', panels: 2, color: 'ivory', sheer: true } },
+  danceFloor: { label: 'Dance floor', params: { width: '16ft', depth: '16ft', style: 'checker' } },
+  uplight: { label: 'Uplight', params: { color: 'blush' } },
 }
 document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => {
   const kind = b.dataset.tool; const q = QUICK[kind]
@@ -237,6 +259,10 @@ function refreshInfo() {
   const items = Object.entries(counts).map(([k, n]) => `${n} × ${k} balloons`)
   if (tables) items.push(`${tables} table${tables > 1 ? 's' : ''} (seat about ${seats})`)
   if (chairs) items.push(`${chairs} chair${chairs > 1 ? 's' : ''}`)
+  const other = {}
+  for (const p of bench.parts.values()) if (p.info?.item && !p.spec.kind.endsWith('Table')) other[p.info.item] = (other[p.info.item] || 0) + 1
+  const plural = (n, w) => (n === 1 ? w : w.replace(/^([^(]*?)(\s*\(|$)/, (m, a, b) => `${a.replace(/y$/, 'ie')}s${b}`))
+  for (const [item, n] of Object.entries(other)) items.push(`${n} × ${plural(n, item)}`)
   $('#shopping').innerHTML = items.length ? `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>` : 'Add an arch or tables to see counts.'
 }
 

@@ -10,6 +10,13 @@ const NOUNS = {
   banquetTable: p => `long banquet tables with ${colorName(p.linen || 'ivory')} linens`,
   chair: p => `${colorName(p.color || 'white')} chairs`,
   backdrop: p => `a ${colorName(p.color || 'white')} ${p.shape || ''} backdrop`,
+  balloonGarland: p => `an organic balloon garland in ${(p.colors || []).map(colorName).join(', ')}`,
+  balloonColumn: p => `balloon columns in ${(p.colors || []).map(colorName).join(', ')}`,
+  centerpiece: p => String(p.style || 'flowers').startsWith('candle') ? 'candle centrepieces' : `${colorName(p.color || 'blush')} flower centrepieces`,
+  cake: p => `a ${p.tiers || 3}-tier ${colorName(p.color || 'ivory')} wedding cake`,
+  drapery: p => `${p.sheer ? 'sheer ' : ''}${colorName(p.color || 'ivory')} draped fabric`,
+  danceFloor: p => `a ${p.style || 'checker'} dance floor`,
+  uplight: p => `${colorName(p.color || 'blush')} uplighting on the walls`,
 }
 
 export function scenePrompt(parts) {

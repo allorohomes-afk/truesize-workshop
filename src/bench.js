@@ -213,8 +213,10 @@ export class Bench {
         const text = objs.length > 1 ? `${objs.length} × ${name.toLowerCase()}s` : name
         const l = this._label(text); l.element.classList.add('component-label')
         const host = objs[Math.floor(objs.length / 2)]
-        host.geometry.computeBoundingBox()
-        l.position.set(0, host.geometry.boundingBox.max.y + 0.08, 0)
+        let top
+        if (host.geometry) { host.geometry.computeBoundingBox(); top = host.geometry.boundingBox.max.y }
+        else top = new THREE.Box3().setFromObject(host).max.y - host.getWorldPosition(new THREE.Vector3()).y   // a group of shapes (e.g. flowers)
+        l.position.set(0, top + 0.08, 0)
         host.add(l); this._compLabels.push(l)
       }
     }
@@ -343,6 +345,16 @@ export class Bench {
     const from = room ? room.home.clone().add(new THREE.Vector3(0, 0, depth / 2 - 0.6)) : target.clone().add(new THREE.Vector3(0, 0, 6))
     from.y = 1.63
     if (from.distanceTo(target) > 9) from.copy(target.clone().add(from.clone().sub(target).setY(0).normalize().multiplyScalar(7)).setY(1.63))
+    // step sideways until nothing stands between the eye and the focal piece (a table in front, a column…)
+    const blockers = all.filter(p => p !== room && p !== focus && !['danceFloor', 'floor', 'wall', 'opening'].includes(p.spec.kind)).map(p => p.group)
+    const halfW = room ? room.size.w / 2 - 0.4 : 10
+    const ray = new THREE.Raycaster()
+    for (const dx of [0, 1.2, -1.2, 2.4, -2.4, 3.6, -3.6, 4.8, -4.8]) {
+      const eye = from.clone(); eye.x = Math.max((room?.home.x ?? 0) - halfW, Math.min((room?.home.x ?? 0) + halfW, from.x + dx))
+      const dir = target.clone().sub(eye), dist = dir.length()
+      ray.set(eye, dir.normalize()); ray.far = dist - 0.3
+      if (!ray.intersectObjects(blockers, true).some(h => h.object.isMesh && h.object.visible)) { from.copy(eye); break }
+    }
     this.camera.position.copy(from); this.controls.target.copy(target); this.camera.updateProjectionMatrix()
   }
 

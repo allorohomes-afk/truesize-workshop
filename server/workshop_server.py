@@ -62,6 +62,13 @@ KINDs and params (sizes are strings WITH units exactly as the user said them, e.
  banquetTable  length (default "6ft"), width, height, color, linen
  chair         color, seatHeight
  backdrop      width, height, shape ("rectangle","arch","circle"), color
+ balloonGarland width, height (its highest point), shape ("cascade","swag","line"), balloon, colors [names]   (hang it on a backdrop: same x and z, z 0.3ft in front)
+ balloonColumn height, balloon, colors [names], topper ("24in", "36in" or false)
+ centerpiece   style ("flowers","candles","tall"), color, height, diameter   (goes on a table automatically; no position needed)
+ cake          tiers (number), diameter (bottom tier), color   (goes on a table automatically)
+ drapery       width, height, panels (number), color, sheer (true/false)
+ danceFloor    width, depth, style ("checker","white","black","wood")
+ uplight       color   (stands on the floor by a wall; rotationY so it faces the wall)
  box           width, height, depth, color
  cylinder      radius or diameter, height, topRadius, color
  sphere        radius or diameter, color
@@ -112,7 +119,7 @@ def chat_ops(text, scene, units):
     return {"reply": str(out.get("reply") or "Done."), "ops": ops, "model": MODEL}
 
 
-SIZE_KEYS = {"width", "height", "depth", "length", "diameter", "radius", "balloon", "seatHeight", "thickness", "topRadius"}
+SIZE_KEYS = {"width", "height", "depth", "length", "diameter", "radius", "balloon", "seatHeight", "thickness", "topRadius", "topper", "tierHeight"}
 
 
 UNIT_WORDS = {"ft": ("feet", "foot", "ft", "'"), "in": ("inches", "inch", "in", '"'), "cm": ("cm",), "mm": ("mm",),
@@ -158,7 +165,8 @@ NUM_WORDS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five":
              "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "a pair of": 2, "a couple of": 2}
 KIND_WORDS = [("roundTable", r"round tables?"), ("banquetTable", r"(?:banquet|rectangular|long) tables?"),
               ("chair", r"chairs?"), ("balloonArch", r"(?:balloon )?arch(?:es)?(?! ?shaped| ?backdrop)"),
-              ("backdrop", r"backdrops?")]
+              ("backdrop", r"backdrops?"), ("balloonColumn", r"(?:balloon )?columns?"), ("centerpiece", r"(?:centerpieces?|centrepieces?)"),
+              ("uplight", r"uplights?"), ("balloonGarland", r"garlands?")]
 
 
 def fill_counts(ops, text):
