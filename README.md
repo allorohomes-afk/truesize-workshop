@@ -18,6 +18,7 @@ It runs on computers you already own. No account, no subscription, nothing leave
 | **True-size 3D** | Rooms, balloon arches (classic or organic), balloon garlands and columns, round and banquet tables, chairs, backdrops, drapery, dance floors, centrepieces and tiered cakes (placed on tables automatically), uplights, plus basic shapes. |
 | **Shopping list** | Balloon counts by size, colour and finish, table seats, chairs. |
 | **📏 Measure** | Click two points: distance, rise and angle. |
+| **✋ Move** | Drag pieces around the room; tables carry what's on them, nothing goes through a wall, and it shows the distance to each wall as you go. Arrow keys nudge, R turns. |
 | **Pull apart** | Walls fold down, pieces lift and separate into labelled components. Click any single balloon to see and change its size, colour and finish, alone or every balloon like it. |
 | **TrueSize Scan** (iPhone/iPad Pro) | A small free iOS app using Apple RoomPlan: scans a real room's walls, doors, windows and furniture and sends them to the Workshop at exact size. |
 | **✨ Render it** | Repaints the 3D view as a photograph with ComfyUI, locked to the scene's real depth so nothing moves. |

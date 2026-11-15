@@ -220,6 +220,23 @@ document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => {
   const offset = kind === 'room' ? [0, 0, 0] : [`${(counter % 4) * 3 - 4}ft`, 0, `${Math.floor(counter / 4) * 4}ft`]
   applyOps([{ op: 'add', id: `${kind}-${++counter}`, kind, label: q.label, params: withPalette(kind, q.params, palette()), position: offset }])
 })
+// ---------- grab and move ----------
+$('#btn-move').onclick = e => {
+  bench.moveMode = !bench.moveMode; e.currentTarget.classList.toggle('on', bench.moveMode)
+  if (bench.moveMode && bench.exploded) applyOps([{ op: 'assemble' }])
+  $('#assistant-status').textContent = bench.moveMode ? 'Move is on: drag a piece. Drag empty space to turn the view.' : `${assistant} is ready`
+}
+const gapText = g => g ? `back wall ${formatLength(Math.max(0, g.back), bench.units)} · left ${formatLength(Math.max(0, g.left), bench.units)} · right ${formatLength(Math.max(0, g.right), bench.units)}` : ''
+bench.onMoveStart = () => snapshotForUndo()
+bench.onMoving = (p, g) => { $('#assistant-status').textContent = `${p.spec.label}: ${gapText(g)}` }
+bench.onMoveEnd = (p, g) => { log(`Moved ${p.spec.label}${g ? ` (${gapText(g)})` : ''}`); showSelected(p); $('#assistant-status').textContent = 'Move is on: drag a piece.' }
+document.addEventListener('keydown', e => {
+  if (!selectedId || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || document.querySelector('dialog[open]')) return
+  const step = (e.shiftKey ? 12 : 3) * 0.0254   // 3 inches, Shift = 1 foot
+  const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }
+  if (moves[e.key]) { e.preventDefault(); if (!e.repeat) snapshotForUndo(); bench.nudge(selectedId, ...moves[e.key]); showSelected(bench.parts.get(selectedId)) }
+  else if (e.key === 'r' || e.key === 'R') { snapshotForUndo(); bench.turn(selectedId, e.shiftKey ? -15 : 15); showSelected(bench.parts.get(selectedId)) }
+})
 $('#btn-measure').onclick = e => { bench.measuring = !bench.measuring; e.target.classList.toggle('on', bench.measuring); if (bench.measuring) say('Click two points and I will measure between them.'); else bench.clearMeasures() }
 function syncExplode() {
   $('#btn-explode').textContent = bench.exploded ? 'Put together' : 'Pull apart'
@@ -280,7 +297,9 @@ $('#btn-render').onclick = async e => {
 $('#btn-snap').onclick = () => { const a = document.createElement('a'); a.href = bench.snapshot(); a.download = `${project}.png`; a.click() }
 
 // ---------- selected piece + shopping list ----------
+let selectedId = null
 function showSelected(p, component) {
+  selectedId = p?.spec.id || null
   if (!p) { $('#selected').textContent = 'Click a piece to see its size. Pull apart, then click a single balloon to change it.'; return }
   if (component?.userData.balloon) return showBalloon(p, component.userData.balloon)
   if (component?.userData.part) {
@@ -294,7 +313,14 @@ function showSelected(p, component) {
   if (p.info?.balloons) lines.push(`${p.info.balloons} balloons · arc ${formatLength(p.info.arcLength, u)}`)
   if (p.info?.seats) lines.push(`seats about ${p.info.seats}`)
   if (p.info?.floorArea) lines.push(`floor ${(p.info.floorArea * 10.7639).toFixed(0)} sq ft`)
-  $('#selected').innerHTML = lines.map(l => `<div>${l.replace(/</g, '&lt;')}</div>`).join('') + `<div class="muted">id: ${p.spec.id}</div>`
+  const g = bench.wallGaps(p)
+  if (g) lines.push(`from walls: back ${formatLength(Math.max(0, g.back), u)} · left ${formatLength(Math.max(0, g.left), u)} · right ${formatLength(Math.max(0, g.right), u)}`)
+  const movable = !['room', 'floor', 'wall', 'opening'].includes(p.spec.kind)
+  $('#selected').innerHTML = lines.map(l => `<div>${l.replace(/</g, '&lt;')}</div>`).join('')
+    + (movable ? `<div class="balloon-card"><div class="row"><button data-turn="-15" title="Turn left">↺ 15°</button><button data-turn="15" title="Turn right">↻ 15°</button><button data-turn="90">↻ 90°</button><button id="sel-remove">Remove</button></div>
+       <div class="muted">${'ontouchstart' in window ? 'Tip: ✋ Move, then drag it.' : 'Tip: ✋ Move and drag, or arrow keys to nudge (Shift = 1 ft), R to turn.'}</div></div>` : '')
+  $('#selected').querySelectorAll('[data-turn]').forEach(b => b.onclick = () => { snapshotForUndo(); bench.turn(p.spec.id, Number(b.dataset.turn)); showSelected(p) })
+  if ($('#sel-remove')) $('#sel-remove').onclick = () => { applyOps([{ op: 'remove', id: p.spec.id }]); showSelected(null) }
 }
 
 function refreshInfo() {

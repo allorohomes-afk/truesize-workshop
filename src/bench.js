@@ -9,6 +9,8 @@ import { toMeters, color, formatLength } from './units.js'
 
 // Pieces that stay on the floor when pulled apart (walls and openings from a scan).
 const FIXED_KINDS = new Set(['wall', 'opening', 'floor', 'furniture'])
+// the room itself (drawn or scanned) can't be dragged; everything in it can
+const LOCKED_KINDS = new Set(['room', 'floor', 'wall', 'opening'])
 
 export class Bench {
   constructor(host, { onPick, onMeasure } = {}) {
@@ -53,6 +55,11 @@ export class Bench {
       if (!this._down || Math.hypot(e.clientX - this._down[0], e.clientY - this._down[1]) > 4) return
       this._click(e)
     })
+    // grab and move: listens on the host in the capture phase, so it decides before the view controls do
+    this.moveMode = false
+    host.addEventListener('pointerdown', e => this._grab(e), { capture: true })
+    window.addEventListener('pointermove', e => this._drag(e))
+    window.addEventListener('pointerup', e => this._drop(e))
     new ResizeObserver(() => this.resize()).observe(host)
     this.resize()
     this.clock = new THREE.Clock()
@@ -221,6 +228,94 @@ export class Bench {
         host.add(l); this._compLabels.push(l)
       }
     }
+  }
+
+  // ---------- grab and move (Move mode): slide a piece across the floor; a table carries what's on it ----------
+  _ray(e) {
+    const r = this.renderer.domElement.getBoundingClientRect()
+    this.mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
+    this.ray.setFromCamera(this.mouse, this.camera)
+  }
+
+  _grab(e) {
+    if (!this.moveMode || this.exploded || this.measuring || e.button > 0) return
+    this._ray(e)
+    const movable = [...this.parts.values()].filter(p => !LOCKED_KINDS.has(p.spec.kind))
+    const hit = this.ray.intersectObjects(movable.map(p => p.group), true).find(h => h.object.isMesh && h.object.visible)
+    const part = hit && this.parts.get(hit.object.userData.partId)
+    if (!part) return   // empty space: the view turns as usual
+    this.controls.enabled = false
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -part.group.position.y)
+    const at = this.ray.ray.intersectPlane(plane, new THREE.Vector3()) || part.group.position.clone()
+    // things standing on a table go with it
+    const riders = part.spec.kind.endsWith('Table')
+      ? [...this.parts.values()].filter(q => ['centerpiece', 'cake'].includes(q.spec.kind) &&
+          Math.hypot(q.group.position.x - part.group.position.x, q.group.position.z - part.group.position.z) < Math.max(part.size.w, part.size.d) / 2)
+          .map(q => ({ q, dx: q.group.position.x - part.group.position.x, dz: q.group.position.z - part.group.position.z }))
+      : []
+    this._drag0 = { part, plane, offset: part.group.position.clone().sub(at), riders, moved: false, start: [e.clientX, e.clientY] }
+    this.onMoveStart?.(part)
+  }
+
+  _drag(e) {
+    const d = this._drag0
+    if (!d) return
+    if (!d.moved && Math.hypot(e.clientX - d.start[0], e.clientY - d.start[1]) < 4) return
+    d.moved = true
+    this._ray(e)
+    const at = this.ray.ray.intersectPlane(d.plane, new THREE.Vector3())
+    if (!at) return
+    const inch = 0.0254
+    let x = Math.round((at.x + d.offset.x) / inch) * inch, z = Math.round((at.z + d.offset.z) / inch) * inch
+    const shell = this._shell()
+    if (shell) {   // stay inside the walls
+      const r = Math.max(d.part.size.w, d.part.size.d) / 2
+      const hw = Math.max(0, shell.size.w / 2 - r), hd = Math.max(0, shell.size.d / 2 - r)
+      x = Math.max(shell.home.x - hw, Math.min(shell.home.x + hw, x)); z = Math.max(shell.home.z - hd, Math.min(shell.home.z + hd, z))
+    }
+    d.part.group.position.x = x; d.part.group.position.z = z
+    for (const { q, dx, dz } of d.riders) { q.group.position.x = x + dx; q.group.position.z = z + dz }
+    this.onMoving?.(d.part, this.wallGaps(d.part))
+  }
+
+  _drop() {
+    const d = this._drag0
+    if (!d) return
+    this._drag0 = null
+    this.controls.enabled = true
+    if (!d.moved) return
+    for (const p of [d.part, ...d.riders.map(r => r.q)]) {
+      const v = p.group.position
+      p.spec.position = [`${v.x.toFixed(4)}m`, `${v.y.toFixed(4)}m`, `${v.z.toFixed(4)}m`]
+      p.home = v.clone()
+    }
+    this._lastDrag = performance.now()
+    this.onMoveEnd?.(d.part, this.wallGaps(d.part))
+  }
+
+  _shell() { return [...this.parts.values()].find(p => p.spec.kind === 'room' || p.spec.kind === 'floor') }
+
+  // How far the piece's edges are from the room's walls (metres): what you'd check with a tape measure.
+  wallGaps(part) {
+    const shell = this._shell()
+    if (!shell || part === shell) return null
+    const c = part.group.position, r = { w: part.size.w / 2, d: part.size.d / 2 }
+    const rot = Math.abs(Math.sin(part.group.rotation.y)) > 0.7   // turned sideways: width and depth swap
+    const hw = rot ? r.d : r.w, hd = rot ? r.w : r.d
+    return { left: c.x - hw - (shell.home.x - shell.size.w / 2), right: shell.home.x + shell.size.w / 2 - (c.x + hw),
+             back: c.z - hd - (shell.home.z - shell.size.d / 2), front: shell.home.z + shell.size.d / 2 - (c.z + hd) }
+  }
+
+  // nudge / turn a piece (arrow keys, R, the Selected panel); saved into its spec so Save and Undo keep it
+  nudge(id, dx, dz) {
+    const p = this.parts.get(id); if (!p || LOCKED_KINDS.has(p.spec.kind)) return
+    p.group.position.x += dx; p.group.position.z += dz
+    const v = p.group.position; p.spec.position = [`${v.x.toFixed(4)}m`, `${v.y.toFixed(4)}m`, `${v.z.toFixed(4)}m`]; p.home = v.clone()
+  }
+  turn(id, deg) {
+    const p = this.parts.get(id); if (!p || LOCKED_KINDS.has(p.spec.kind)) return
+    p.spec.rotationY = ((Number(p.spec.rotationY || 0) + deg) % 360 + 360) % 360
+    p.group.rotation.y = THREE.MathUtils.degToRad(p.spec.rotationY)
   }
 
   // ---------- picking + measuring ----------
